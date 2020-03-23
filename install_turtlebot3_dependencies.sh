@@ -1,4 +1,5 @@
 #!/bin/bash
+#source: https://automaticaddison.com/how-to-launch-the-turtlebot3-simulation-with-ros/
 
 if [[ -d ~/catkin_ws/ ]]
 then
