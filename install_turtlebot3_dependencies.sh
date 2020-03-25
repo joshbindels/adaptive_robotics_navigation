@@ -26,6 +26,9 @@ git clone https://github.com/ROBOTIS-GIT/turtlebot3_simulations.git
 cd ..
 catkin_make
 
+echo "Install slam gmapping"
+sudo apt install ros-melodic-slam-gmapping
+
 
 echo "TurtleBot3 simulator installed"
 
