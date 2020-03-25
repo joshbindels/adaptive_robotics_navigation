@@ -12,7 +12,9 @@ sudo apt update
 echo "Installing ros.."
 sudo apt install ros-melodic-desktop-full
 
+
 echo "Setting up rosdep.."
+sudo apt install python-rosdep
 sudo rosdep init
 rosdep update
 
