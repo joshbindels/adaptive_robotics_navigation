@@ -6,7 +6,7 @@ then
 elif [ $1 == "r" ] ;
 then
 	echo "start rviz";
-	roslaunch turtlebot3_slam turtlebot3_slam.launch slam_methods:\=gmapping
+	roslaunch turtlebot3_navigation turtlebot3_navigation.launch map_file:=/home/josh/catkin_ws/src/map/mymap.yaml
 else
 	echo "invalid";
 fi
