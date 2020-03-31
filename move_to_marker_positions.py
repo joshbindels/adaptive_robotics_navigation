@@ -5,6 +5,15 @@ from actionlib_msgs.msg import *
 from geometry_msgs.msg import Pose, Point, Quaternion
 from tf import transformations
 import math
+import cv2
+from cv_bridge import CvBridge, CvBridgeError
+from sensor_msgs.msg import Image
+from pyzbar import pyzbar
+
+NORTH = 0
+SOUTH = 180
+EAST  = 270
+WEST  = 90
 
 class GoToPose():
     def __init__(self):
@@ -26,7 +35,7 @@ class GoToPose():
 
         self.move_base.send_goal(goal)
 
-	success = self.move_base.wait_for_result(rospy.Duration(60)) 
+	success = self.move_base.wait_for_result(rospy.Duration(60 * 5)) 
 
         state = self.move_base.get_state()
         result = False
@@ -50,41 +59,99 @@ class MarkerPosition:
         self.position = position
         self.angle = angle
 
+QR_WIDTH = 800
+QR_HEIGHT = QR_WIDTH
+class QRReader:
+    def __init__(self):
+        self.bridge = CvBridge()
+        self.image_sub = rospy.Subscriber(
+            "camera/rgb/image_raw",
+            Image,
+            self.camera_callback
+        )
+        cv2.namedWindow("QrViewer", cv2.WINDOW_NORMAL)
+        cv2.resizeWindow("QrViewer", QR_WIDTH, QR_HEIGHT)
+        cv2.waitKey(2)
+
+    def camera_callback(self, data):
+        try:
+            self.image = self.bridge.imgmsg_to_cv2(data, desired_encoding="bgr8")
+        except CvBridgeError as e:
+            print(e)
+        except Exception as e:
+            print(e)
+
+    def read(self):
+        img = cv2.resize(self.image, (QR_WIDTH, QR_HEIGHT))
+        codes = pyzbar.decode(img)
+        if len(codes) > 0:  
+            return codes[0].data.decode("utf-8")
+        else:
+            return -1
+
+
+    def QR_show(self):
+        print("Showing QR code")
+        img = cv2.resize(self.image, (QR_WIDTH, QR_HEIGHT))
+        codes = pyzbar.decode(img)
+        for code in codes:
+            (x, y, w, h) = code.rect
+            cv2.rectangle(img, (x, y), (x+w, y+h), (0, 0, 255), 2)
+            qrdata = code.data.decode("utf-8")
+            qrtype = code.type
+            text = "{} ({})".format(qrdata, qrtype)
+            cv2.putText(
+                img,
+                text,
+                (x, y-10),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.5,
+                (0, 0, 255),
+                2
+            )
+            cv2.imshow("QrViewer", img)
+            print("Found type: %s data: %s" % (qrtype, qrdata))
+
+
 if __name__ == '__main__':
     try:
         rospy.init_node('nav_test', anonymous=False)
         navigator = GoToPose()
+        qrviewer = QRReader()
 
         markers = []
-        markers.append(MarkerPosition({'x': -4.14,  'y' : -4.63}, 0))
-        markers.append(MarkerPosition({'x': -6.67,  'y' : -4.33}, 90))
-        markers.append(MarkerPosition({'x': -4.14,  'y' : -4.63}, 180))
-        markers.append(MarkerPosition({'x': -6.67,  'y' : -4.33}, 270))
 
-        """
-        # orientation north
-        markers.append(MarkerPosition({'x': 1.75,  'y' : -0.43}, {'r1' : 0.000, 'r2' : 0.000, 'r3' : 0.000, 'r4' : 1.000}))
-        markers.append(MarkerPosition({'x': 7.35,  'y' : 6.90 }, {'r1' : 0.000, 'r2' : 0.000, 'r3' : 0.000, 'r4' : 1.000}))
-        markers.append(MarkerPosition({'x': 10.56, 'y' : 5.42 }, {'r1' : 0.000, 'r2' : 0.000, 'r3' : 0.000, 'r4' : 1.000}))
-        markers.append(MarkerPosition({'x': 8.92,  'y' : 0.04 }, {'r1' : 0.000, 'r2' : 0.000, 'r3' : 0.000, 'r4' : 1.000}))
-        markers.append(MarkerPosition({'x': 15.93, 'y' : -3.11}, {'r1' : 0.000, 'r2' : 0.000, 'r3' : 0.000, 'r4' : 1.000}))
-        
-        # orientation west
-        markers.append(MarkerPosition({'x': 8.91, 'y' : 2.12  }, {'r1' : 0.000, 'r2' : 0.000, 'r3' : 0.000, 'r4' : 1.000}))
-        markers.append(MarkerPosition({'x': 12.30, 'y' : 12.58}, {'r1' : 0.000, 'r2' : 0.000, 'r3' : 0.000, 'r4' : 1.000}))
+        markers.append(MarkerPosition({'x': -4.14,  'y' : -4.63}, NORTH))
+        markers.append(MarkerPosition({'x': 1.35, 'y' : 2.61}, NORTH))
+        markers.append(MarkerPosition({'x': 4.84, 'y' : 0.79}, NORTH))
+        markers.append(MarkerPosition({'x': 3.15, 'y' : -4.80}, NORTH))
+        markers.append(MarkerPosition({'x': 10.15, 'y' : -8.30}, NORTH))
 
-        # orientation east
-        markers.append(MarkerPosition({'x': 12.37, 'y' : -3.29}, {'r1' : 0.000, 'r2' : 0.000, 'r3' : 0.000, 'r4' : 1.000}))
+        markers.append(MarkerPosition({'x': 3.18, 'y' : -2.74}, WEST))
+        markers.append(MarkerPosition({'x': 6.94, 'y' : 8.30}, WEST))
 
-        #orientation south
-        markers.append(MarkerPosition({'x': 1.78, 'y' : 8.84}, {'r1' : 0.000, 'r2' : 0.000, 'r3' : 0.000, 'r4' : 1.000}))
-        """
+        markers.append(MarkerPosition({'x': 4.66, 'y' : 4.90}, SOUTH))
+        markers.append(MarkerPosition({'x': -4.43, 'y' : 4.57}, SOUTH))
 
+        markers.append(MarkerPosition({'x': 6.28, 'y' : -8.25}, EAST))
+
+        markers.append(MarkerPosition({'x': -6.67,  'y' : -4.33}, NORTH)) # origin
+
+        rospy.sleep(5)
+        rospy.loginfo("Starting navigator...")
+
+        qr_order = []
+
+        #qrviewer.QR_show()
 
         for marker in markers:
             rospy.loginfo("Go to (%s, %s) pose", marker.position['x'], marker.position['y'])
             success = navigator.goto(marker.position, marker.angle)
-            print("Reached goal, staring into the void for 5 seconds..")
+            rospy.loginfo("Reached goal, reading QR code..")
+            qrviewer.QR_show()
+            #qr_val = qrviewer.read()
+            #print("qr_val: %s" % qr_val)
+            #qr_order.append(qr_val)
             rospy.sleep(5)
 
         if success:
@@ -92,6 +159,7 @@ if __name__ == '__main__':
         else:
             rospy.loginfo("The base failed to reach the desired pose")
 
+        print(", ".join(str(x) for x in qr_order))
         # Sleep to give the last log messages time to be sent
         rospy.sleep(1)
 
