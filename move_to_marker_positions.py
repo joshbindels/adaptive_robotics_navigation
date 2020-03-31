@@ -69,9 +69,9 @@ class QRReader:
             Image,
             self.camera_callback
         )
-        cv2.namedWindow("QrViewer", cv2.WINDOW_NORMAL)
-        cv2.resizeWindow("QrViewer", QR_WIDTH, QR_HEIGHT)
-        cv2.waitKey(2)
+        #cv2.namedWindow("QrViewer", cv2.WINDOW_NORMAL)
+        #cv2.resizeWindow("QrViewer", QR_WIDTH, QR_HEIGHT)
+        #cv2.waitKey(2)
 
     def camera_callback(self, data):
         try:
@@ -82,8 +82,8 @@ class QRReader:
             print(e)
 
     def read(self):
-        img = cv2.resize(self.image, (QR_WIDTH, QR_HEIGHT))
-        codes = pyzbar.decode(img)
+        #img = cv2.resize(self.image, (QR_WIDTH, QR_HEIGHT))
+        codes = pyzbar.decode(self.image)
         if len(codes) > 0:  
             return codes[0].data.decode("utf-8")
         else:
@@ -121,19 +121,16 @@ if __name__ == '__main__':
 
         markers = []
 
-        markers.append(MarkerPosition({'x': -4.14,  'y' : -4.63}, NORTH))
-        markers.append(MarkerPosition({'x': 1.35, 'y' : 2.61}, NORTH))
-        markers.append(MarkerPosition({'x': 4.84, 'y' : 0.79}, NORTH))
-        markers.append(MarkerPosition({'x': 3.15, 'y' : -4.80}, NORTH))
-        markers.append(MarkerPosition({'x': 10.15, 'y' : -8.30}, NORTH))
-
-        markers.append(MarkerPosition({'x': 3.18, 'y' : -2.74}, WEST))
-        markers.append(MarkerPosition({'x': 6.94, 'y' : 8.30}, WEST))
-
-        markers.append(MarkerPosition({'x': 4.66, 'y' : 4.90}, SOUTH))
-        markers.append(MarkerPosition({'x': -4.43, 'y' : 4.57}, SOUTH))
-
-        markers.append(MarkerPosition({'x': 6.28, 'y' : -8.25}, EAST))
+        markers.append(MarkerPosition({'x': -4.14,  'y' : -4.63}, NORTH)) #0
+        markers.append(MarkerPosition({'x': 1.35, 'y' : 2.61}, NORTH)) #1
+        markers.append(MarkerPosition({'x': 4.84, 'y' : 0.79}, NORTH)) #2
+        markers.append(MarkerPosition({'x': 3.06, 'y' : -4.74}, NORTH)) #3
+        markers.append(MarkerPosition({'x': 4.66, 'y' : 4.90}, SOUTH)) #4
+        markers.append(MarkerPosition({'x': 3.18, 'y' : -2.74}, WEST)) #5
+        markers.append(MarkerPosition({'x': -4.43, 'y' : 4.57}, SOUTH)) #6
+        markers.append(MarkerPosition({'x': 6.28, 'y' : -8.25}, EAST)) #7
+        markers.append(MarkerPosition({'x': 10.15, 'y' : -8.30}, NORTH)) #8
+        markers.append(MarkerPosition({'x': 6.94, 'y' : 8.30}, WEST)) #9
 
         markers.append(MarkerPosition({'x': -6.67,  'y' : -4.33}, NORTH)) # origin
 
@@ -148,10 +145,10 @@ if __name__ == '__main__':
             rospy.loginfo("Go to (%s, %s) pose", marker.position['x'], marker.position['y'])
             success = navigator.goto(marker.position, marker.angle)
             rospy.loginfo("Reached goal, reading QR code..")
-            qrviewer.QR_show()
-            #qr_val = qrviewer.read()
-            #print("qr_val: %s" % qr_val)
-            #qr_order.append(qr_val)
+            #qrviewer.QR_show()
+            qr_val = qrviewer.read()
+            print("qr_val: %s" % qr_val)
+            qr_order.append(qr_val)
             rospy.sleep(5)
 
         if success:
